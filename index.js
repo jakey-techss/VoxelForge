@@ -119,7 +119,392 @@ sun.position.set(
 scene.add(sun);
 
 
+// =========================
+// VIEW CUBE
+// =========================
 
+
+const cubeScene =
+    new THREE.Scene();
+
+
+const cubeCamera =
+    new THREE.PerspectiveCamera(
+        40,
+        1,
+        0.1,
+        100
+    );
+
+
+cubeCamera.position.set(
+    0,
+    0,
+    5
+);
+
+
+
+const cubeRenderer =
+    new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true
+    });
+
+
+cubeRenderer.setSize(
+    120,
+    120
+);
+
+
+document
+    .getElementById("view-cube")
+    .appendChild(
+        cubeRenderer.domElement
+    );
+
+
+
+
+
+const viewCubeGeometry =
+    new THREE.BoxGeometry(
+        2,
+        2,
+        2
+    );
+
+
+
+const cubeFaceMaterial = {
+
+    transparent:true,
+
+    opacity:0.35,
+
+    side:THREE.DoubleSide
+
+};
+
+
+const cubeMaterials = [
+
+    new THREE.MeshBasicMaterial({
+        color:0xff5555,
+        ...cubeFaceMaterial
+    }),
+
+    new THREE.MeshBasicMaterial({
+        color:0xff5555,
+        ...cubeFaceMaterial
+    }),
+
+    new THREE.MeshBasicMaterial({
+        color:0x55ff55,
+        ...cubeFaceMaterial
+    }),
+
+    new THREE.MeshBasicMaterial({
+        color:0x55ff55,
+        ...cubeFaceMaterial
+    }),
+
+    new THREE.MeshBasicMaterial({
+        color:0x5599ff,
+        ...cubeFaceMaterial
+    }),
+
+    new THREE.MeshBasicMaterial({
+        color:0x5599ff,
+        ...cubeFaceMaterial
+    })
+
+];
+
+
+
+
+const viewCube =
+    new THREE.Mesh(
+        viewCubeGeometry,
+        cubeMaterials
+    );
+
+
+cubeScene.add(viewCube);
+function createFaceLabel(text, position, rotation){
+
+
+    const canvas =
+        document.createElement("canvas");
+
+
+    canvas.width = 256;
+    canvas.height = 256;
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    ctx.clearRect(
+        0,
+        0,
+        256,
+        256
+    );
+
+
+    ctx.fillStyle = "white";
+
+
+    ctx.font =
+        "bold 55px Arial";
+
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.textBaseline =
+        "middle";
+
+
+    ctx.fillText(
+        text,
+        128,
+        128
+    );
+
+
+
+    const texture =
+        new THREE.CanvasTexture(
+            canvas
+        );
+
+
+    const material =
+        new THREE.MeshBasicMaterial({
+
+            map:texture,
+
+            transparent:true,
+
+            depthTest:false
+
+        });
+
+
+
+    const plane =
+        new THREE.Mesh(
+
+            new THREE.PlaneGeometry(
+                .8,
+                .8
+            ),
+
+            material
+
+        );
+
+
+
+    plane.position.copy(
+        position
+    );
+
+
+    plane.rotation.copy(
+        rotation
+    );
+
+
+    plane.renderOrder = 10;
+
+
+    cubeScene.add(
+        plane
+    );
+
+
+}
+
+
+
+// cube labels
+// TOP (+Y)
+
+createFaceLabel(
+
+    "TOP",
+
+    new THREE.Vector3(
+        0,
+        1.01,
+        0
+    ),
+
+    new THREE.Euler(
+        -Math.PI/2,
+        0,
+        0
+    )
+
+);
+
+
+
+// FRONT (+Z)
+
+createFaceLabel(
+
+    "FRONT",
+
+    new THREE.Vector3(
+        0,
+        0,
+        1.01
+    ),
+
+    new THREE.Euler(
+        0,
+        0,
+        0
+    )
+
+);
+
+
+
+// RIGHT (+X)
+
+createFaceLabel(
+
+    "RIGHT",
+
+    new THREE.Vector3(
+        1.01,
+        0,
+        0
+    ),
+
+    new THREE.Euler(
+        0,
+        Math.PI/2,
+        0
+    )
+
+);
+function createAxisLine(
+    color,
+    direction
+){
+
+
+    const points = [
+
+        new THREE.Vector3(
+            0,
+            0,
+            0
+        ),
+
+        direction
+
+    ];
+
+
+    const geometry =
+    new THREE.BufferGeometry()
+    .setFromPoints(
+        points
+    );
+
+
+    const material =
+    new THREE.LineBasicMaterial({
+
+        color:color,
+
+        linewidth:3
+
+    });
+
+
+
+    const line =
+    new THREE.Line(
+        geometry,
+        material
+    );
+
+
+    cubeScene.add(line);
+
+
+}
+
+
+
+// X axis
+
+createAxisLine(
+    0xff0000,
+    new THREE.Vector3(
+        2,
+        0,
+        0
+    )
+);
+
+
+// Y axis
+
+createAxisLine(
+    0x00ff00,
+    new THREE.Vector3(
+        0,
+        2,
+        0
+    )
+);
+
+
+// Z axis
+
+createAxisLine(
+    0x0000ff,
+    new THREE.Vector3(
+        0,
+        0,
+        2
+    )
+);
+
+
+
+
+
+function updateViewCube() {
+
+
+    viewCube.quaternion.copy(
+    camera.quaternion.clone().invert()
+);
+
+    cubeScene.add(viewCube);
+    cubeCamera.lookAt(0, 0, 0);
+
+    cubeRenderer.render(
+        cubeScene,
+        cubeCamera
+    );
+
+
+}
 
 
 // =========================
@@ -360,13 +745,14 @@ const textures = {
         loadTexture(
             "textures/Brick.webp"
         ),
+    metal:
+        loadTexture(
+            "textures/iron.png"
+        ),
 
 
 };
-const glassTexture =
-    loadTexture(
-        "textures/glass.png"
-    );
+const glassTexture = loadTexture("textures/glass.png");
 
 glassTexture.magFilter =
     THREE.NearestFilter;
@@ -426,7 +812,14 @@ function getBlockMaterial(type) {
                 map: textures.dirt
 
             });
-            case "brick":
+        case "metal":
+
+            return new THREE.MeshLambertMaterial({
+
+                map: textures.metal
+
+            });
+        case "brick":
 
             return new THREE.MeshLambertMaterial({
 
@@ -574,6 +967,71 @@ function createBlock(x, y, z, type) {
     blockCount++;
 
     updateStats();
+
+}
+function applyGravity() {
+
+
+    Object.values(blocks)
+        .forEach(block => {
+
+
+            let x =
+                block.position.x;
+
+
+            let y =
+                block.position.y;
+
+
+            let z =
+                block.position.z;
+
+
+
+            // ground cannot fall
+
+            if (y <= 0)
+                return;
+
+
+
+            let below =
+                `${x},${y - 1},${z}`;
+
+
+
+            // no block below
+
+            if (!blocks[below]) {
+
+
+                let oldKey =
+                    `${x},${y},${z}`;
+
+
+
+                delete blocks[oldKey];
+
+
+
+                block.position.y -= 1;
+
+
+
+                let newKey =
+                    `${x},${y - 1},${z}`;
+
+
+
+                blocks[newKey] = block;
+
+
+            }
+
+
+        });
+
 
 }
 
@@ -928,6 +1386,7 @@ function updateStats() {
 // LOOP
 // =========================
 
+let gravityTimer = 0;
 
 function animate() {
 
@@ -938,11 +1397,22 @@ function animate() {
 
     updateCamera();
 
+    gravityTimer++;
+    if (gravityTimer > 20) {
+
+        applyGravity();
+
+        gravityTimer = 0;
+
+    }
 
     renderer.render(
         scene,
         camera
     );
+
+
+    updateViewCube();
 
 
 }
@@ -1022,3 +1492,134 @@ function insideBuildZone(x, z) {
 
 
 }
+const homePosition =
+new THREE.Vector3(
+    12,
+    12,
+    12
+);
+
+
+
+function resetCamera(){
+
+
+    camera.position.copy(
+        homePosition
+    );
+
+
+    cameraTarget.set(
+        0,
+        0,
+        0
+    );
+
+
+    rotation.yaw = -45;
+
+    rotation.pitch = -35;
+
+
+}
+document
+.getElementById("home-button")
+.onclick = resetCamera;
+const cubeRaycaster =
+new THREE.Raycaster();
+
+
+const cubeMouse =
+new THREE.Vector2();
+cubeRenderer.domElement
+.addEventListener(
+"click",
+e=>{
+
+
+let rect =
+cubeRenderer.domElement
+.getBoundingClientRect();
+
+
+
+cubeMouse.x =
+((e.clientX-rect.left)
+/rect.width)*2-1;
+
+
+
+cubeMouse.y =
+-((e.clientY-rect.top)
+/rect.height)*2+1;
+
+
+
+cubeRaycaster
+.setFromCamera(
+    cubeMouse,
+    cubeCamera
+);
+
+
+
+let hit =
+cubeRaycaster
+.intersectObject(
+    viewCube
+);
+
+
+
+if(!hit.length)
+return;
+
+
+
+let normal =
+hit[0].face.normal;
+
+
+
+if(normal.y > .5){
+
+    camera.position.set(
+        0,
+        25,
+        0
+    );
+
+}
+
+
+if(normal.z > .5){
+
+    camera.position.set(
+        0,
+        10,
+        25
+    );
+
+}
+
+
+if(normal.x > .5){
+
+    camera.position.set(
+        25,
+        10,
+        0
+    );
+
+}
+
+
+
+cameraTarget.set(
+    0,
+    0,
+    0
+);
+
+
+});
