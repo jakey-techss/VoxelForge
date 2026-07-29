@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>VoxelForge</title>
+
+    <link rel="stylesheet" href="index.css">
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+</head>
+
+<body>
+
+<div id="app">
+
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+
+        <div class="logo">
+            <span class="logo-icon">⬢</span>
+            VoxelForge
+        </div>
+
+
+        <div class="toolbar">
+
+            <button id="newWorld">
+                New World
+            </button>
+
+            <button id="saveWorld">
+                Save
+            </button>
+
+            <button id="exportModel">
+                Export Fabrication
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+    <!-- MAIN WORKSPACE -->
+    <main class="workspace">
+
+
+        <!-- LEFT INVENTORY -->
+        <aside class="inventory-panel">
+
+
+            <h2>
+                Inventory
+            </h2>
+
+
+            <div class="inventory-grid" id="inventory">
+
+
+                <div class="item selected"
+                     data-block="grass">
+
+                    <img src="textures/grassInven.webp">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="dirt">
+
+                    <img src="textures/dirtInven.webp">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="stone">
+
+                    <img src="textures/stoneInven.webp">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="wood">
+
+                    <img src="textures/woodInven.webp">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="planks">
+
+                    <img src="textures/woodPlankInven.webp">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="glass">
+
+                    <img src="textures/glassInven.webp">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="brick">
+
+                    <img src="textures/BrickInve.png">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="metal">
+
+                    <img src="assets/blocks/metal.png">
+
+                </div>
+
+
+                <div class="item"
+                     data-block="printer">
+
+                    <img src="assets/blocks/printer.png">
+
+                </div>
+
+
+            </div>
+
+
+            <div class="inventory-info">
+
+                Selected:
+                <span id="selectedBlock">
+                    Grass
+                </span>
+
+            </div>
+
+
+        </aside>
+
+
+
+
+
+        <!-- 3D VIEW -->
+        <section class="viewport">
+
+
+            <div id="three-container"></div>
+
+
+
+            <div class="crosshair">
+                +
+            </div>
+
+
+
+            <div class="controls">
+
+                <div>
+                    Left Click:
+                    Place Block
+                </div>
+
+                <div>
+                    Right Click:
+                    Remove Block
+                </div>
+
+                <div>
+                    WASD:
+                    Move
+                </div>
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+        <!-- RIGHT PANEL -->
+        <aside class="properties-panel">
+
+
+            <h2>
+                Build Info
+            </h2>
+
+
+
+            <div class="stat">
+
+                Blocks:
+
+                <span id="blockCount">
+                    0
+                </span>
+
+            </div>
+
+
+
+            <div class="stat">
+
+                Size:
+
+                <span id="worldSize">
+                    0 x 0 x 0
+                </span>
+
+            </div>
+
+
+
+
+
+
+            <h2 style="margin-top: 50px;">
+                Fabrication
+            </h2>
+
+
+
+
+            <button id="generateFile">
+
+                Generate Model
+
+            </button>
+
+
+
+        </aside>
+
+
+    </main>
+
+
+
+
+    <!-- BOTTOM STATUS BAR -->
+    <footer class="statusbar">
+
+
+        <div>
+            VoxelForge Engine
+        </div>
+
+
+        <div id="status">
+
+            Ready
+
+        </div>
+
+
+    </footer>
+
+
+</div>
+
+
+<div id="build-alert">
+
+    <div class="alert-icon">
+        ⚠
+    </div>
+
+    <div>
+        <strong>
+            Cannot Build Here
+        </strong>
+
+        <p>
+            Outside safe build zone
+        </p>
+    </div>
+
+</div>
+
+<script src="index.js"></script>
+
+</body>
+
+</html>
