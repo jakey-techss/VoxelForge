@@ -23,10 +23,26 @@
 
     --muted:
         #8b98a8;
+    
+    --success: #22c55e;
+    --success-hover: #16a34a;
+    --success-bg: rgba(34, 197, 94, 0.15);
+
+    --error: #ef4444;
+    --error-hover: #dc2626;
+    --error-bg: rgba(239, 68, 68, 0.15);
+
+    --warning: #f59e0b;
+    --warning-bg: rgba(245, 158, 11, 0.15);
+
+    --info: #3b82f6;
+    --info-bg: rgba(59, 130, 246, 0.15);
 
 }
 
-
+#status{
+    color: var(--warning);
+}
 
 * {
 
@@ -863,6 +879,9 @@ input {
 
 
     font-size:24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
 
     cursor:pointer;
@@ -882,5 +901,120 @@ input {
     background:
         rgba(255,255,255,.2);
 
+
+}
+
+.print-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(10,12,20,.82);
+    backdrop-filter:blur(18px);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:5000;
+    transition:.3s;
+}
+
+.print-overlay.hidden{
+    opacity:0;
+    pointer-events:none;
+}
+
+.print-window{
+    width:420px;
+    padding:35px;
+    border-radius:22px;
+    background:#161922;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 25px 80px rgba(0,0,0,.45);
+    text-align:center;
+}
+
+.print-window h2{
+    margin:15px 0 8px;
+    font-size:26px;
+}
+
+.print-window p{
+    color:#9ba3b5;
+    min-height:22px;
+}
+
+.progress-container{
+    margin-top:30px;
+    width:100%;
+    height:12px;
+    border-radius:8px;
+    overflow:hidden;
+    background:#232733;
+}
+
+#progressBar{
+    width:0%;
+    height:100%;
+    background:linear-gradient(90deg,#4ADE80,#22C55E);
+    transition:width .25s linear;
+}
+
+.print-info{
+    display:flex;
+    justify-content:space-between;
+    margin-top:20px;
+}
+
+.print-info span{
+    display:block;
+    color:#7d8799;
+    font-size:13px;
+}
+
+.print-info strong{
+    display:block;
+    margin-top:4px;
+    font-size:19px;
+}
+
+#cancelPrint{
+    margin-top:30px;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#ef4444;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+#cancelPrint:hover{
+    background:#dc2626;
+}
+
+/* Minecraft cube */
+
+.voxel-loader{
+    display:flex;
+    justify-content:center;
+}
+
+.cube{
+    width:42px;
+    height:42px;
+    background:url("textures/grass.png");
+    background-size:cover;
+    animation:spinCube 2.2s linear infinite;
+    transform-style:preserve-3d;
+}
+
+@keyframes spinCube{
+
+    from{
+        transform:rotate(0deg);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
 
 }

@@ -2,9 +2,34 @@ const container = document.getElementById("three-container");
 
 
 let blocks = {};
+let blocksToMake = [];
 let selectedBlock = "grass";
 let blockCount = 0;
+let connected = false
 
+const socket = new WebSocket("ws://10.200.176.68/ws");
+connectToPrinter()
+function connectToPrinter() {
+    document.getElementById("status").innerHTML = "Connecting To Printer..."
+    document.getElementById("status").style.color = "var(--warning)"
+    socket.onopen = () => {
+        document.getElementById("status").innerHTML = "Ready"
+        document.getElementById("status").style.color = "var(--success)"
+        connected = true
+        
+    };
+    socket.onmessage = (event) => {
+        console.log(event.data);
+    };
+    socket.onclose = () => {
+        document.getElementById("status").innerHTML = "Printer Disconnected"
+        document.getElementById("status").style.color = "var(--error)"
+    };
+    socket.onerror = (error) => {
+        document.getElementById("status").innerHTML = "Failed To Connect To Printer"
+        document.getElementById("status").style.color = "var(--error)"
+    };
+}
 
 const WORLD_SIZE = 16;
 const BUILD_ZONE = {
@@ -18,21 +43,6 @@ const BUILD_ZONE = {
 };
 
 
-const blockColors = {
-
-    grass: 0x55aa55,
-    dirt: 0x8b5a2b,
-    stone: 0x777777,
-    wood: 0x9b6b30,
-    planks: 0xc89b55,
-    glass: 0x88ccff,
-    brick: 0xaa4444,
-    metal: 0xaaaaaa,
-    printer: 0x222222
-
-};
-
-
 
 // =========================
 // THREE SETUP
@@ -42,8 +52,7 @@ const blockColors = {
 const scene = new THREE.Scene();
 
 scene.background =
-    new THREE.Color(0x87ceeb);
-
+    new THREE.Color(0x78c8ff);
 
 
 const camera =
@@ -100,29 +109,669 @@ scene.add(
     )
 );
 
+// =========================
+// DAY NIGHT SUN SYSTEM
+// =========================
+const moonLight =
+    new THREE.DirectionalLight(
+        0x8899ff,
+        0.15
+    );
 
 
-let sun =
+scene.add(
+    moonLight
+);
+
+const sunLight =
     new THREE.DirectionalLight(
         0xffffff,
         1
     );
 
 
-sun.position.set(
-    10,
-    20,
-    10
+sunLight.position.set(
+    50,
+    100,
+    50
 );
 
 
-scene.add(sun);
+scene.add(
+    sunLight
+);
+
+
+
+const sunTexture = new THREE.TextureLoader().load("textures/sun.png");
+sunTexture.magFilter = THREE.NearestFilter;
+sunTexture.minFilter = THREE.NearestFilter;
+
+const minecraftSun = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshBasicMaterial({
+        map: sunTexture,
+        transparent: true,
+        depthWrite: false
+    })
+);
+
+scene.add(minecraftSun);
+
+
+const sunMaterial =
+    new THREE.MeshBasicMaterial({
+
+        color: 0xffff88
+
+    });
+
+
+
+
+scene.add(
+    minecraftSun
+);
+// =========================
+// MOON
+// =========================
+
+const moonTexture = new THREE.TextureLoader().load("textures/moon.png");
+moonTexture.magFilter = THREE.NearestFilter;
+moonTexture.minFilter = THREE.NearestFilter;
+
+const moon = new THREE.Mesh(
+    new THREE.PlaneGeometry(18, 18),
+    new THREE.MeshBasicMaterial({
+        map: moonTexture,
+        transparent: true,
+        depthWrite: false
+    })
+);
+
+scene.add(moon);
+
+
+const moonMaterial =
+    new THREE.MeshBasicMaterial({
+
+        color: 0xffffff,
+
+    });
+
+
+
+
+scene.add(
+    moon
+);
+// =========================
+// STAR FIELD
+// =========================
+
+let stars = [];
+
+
+function createStars() {
+
+
+    const starMaterial =
+        new THREE.MeshBasicMaterial({
+
+            color: 0xffffff
+
+        });
+
+
+
+    for (
+        let i = 0;
+        i < 300;
+        i++
+    ) {
+
+
+        let star =
+            new THREE.Mesh(
+
+                new THREE.SphereGeometry(
+                    0.15,
+                    6,
+                    6
+                ),
+
+                starMaterial
+
+            );
+
+
+
+        star.position.set(
+
+            Math.random() * 300 - 150,
+
+            Math.random() * 150 + 50,
+
+            Math.random() * 300 - 150
+
+        );
+
+
+        scene.add(
+            star
+        );
+
+
+        stars.push(star);
+
+
+    }
+
+
+}
+// =========================
+// LOWER STAR FIELD
+// =========================
+
+let bottomStars = [];
+
+
+function createBottomStars() {
+
+    const bottomStarMaterial =
+        new THREE.MeshBasicMaterial({
+
+            color: 0xffffff,
+
+            transparent: true,
+
+            opacity: 0.7
+
+        });
+
+
+    for (
+        let i = 0;
+        i < 200;
+        i++
+    ) {
+
+        let star =
+            new THREE.Mesh(
+
+                new THREE.SphereGeometry(
+                    0.12,
+                    6,
+                    6
+                ),
+
+                bottomStarMaterial
+
+            );
+
+
+        star.position.set(
+
+            Math.random() * 300 - 150,
+
+            Math.random() * -80 - 20,
+
+            Math.random() * 300 - 150
+
+        );
+
+
+        scene.add(star);
+
+        bottomStars.push(star);
+
+    }
+
+}
+
+
+createBottomStars();
+
+
+
+createStars();
+// =========================
+// REAL TIME DAY NIGHT CYCLE
+// =========================
+
+
+function updateDayNight() {
+    minecraftSun.quaternion.copy(camera.quaternion);
+    moon.quaternion.copy(camera.quaternion);
+
+
+    const now = new Date();
+
+    const hours =
+        now.getHours() +
+        now.getMinutes() / 60;
+
+    // Shift by -6 hours
+    const angle =
+        ((hours - 6) / 24) * Math.PI * 2;
+
+
+    let radius = 120;
+
+
+
+    let sunX =
+        Math.cos(angle)
+        *
+        radius;
+
+
+    let sunY =
+        Math.sin(angle)
+        *
+        radius;
+
+
+    let sunZ =
+        40;
+
+
+
+    sunLight.position.set(
+
+        sunX,
+        sunY,
+        sunZ
+
+    );
+
+
+
+    minecraftSun.position.set(
+
+        sunX,
+        sunY,
+        sunZ
+
+    );
+
+    // Moon opposite the sun
+
+    // Moon opposite the sun
+    moon.position.set(
+        -sunX,
+        -sunY,
+        -sunZ
+    );
+
+    // brightness
+
+    const daylight = Math.max(0, Math.sin(angle));
+
+
+
+    sunLight.intensity =
+        daylight;
+
+    let nightAmount =
+        1 - Math.max(
+            0,
+            daylight * 4
+        );
+
+
+    stars.forEach(star => {
+
+        star.visible =
+            nightAmount > 0.2;
+
+    });
+
+
+    bottomStars.forEach(star => {
+
+        star.visible =
+            nightAmount > 0.2;
+
+    });
+
+    // sky colors
+    const dayFactor = Math.max(0, Math.sin(angle));
+
+    sunLight.intensity = 0.15 + dayFactor * 0.85;
+    moonLight.intensity = 0.4 * (1 - dayFactor);
+    if (dayFactor < 0.1) {
+
+
+        // night
+
+        scene.background =
+            new THREE.Color(
+                0x050820
+            );
+
+
+        sunLight.color.set(
+            0x6677ff
+        );
+
+
+    }
+    else if (dayFactor < 0.35) {
+
+
+        // sunrise / sunset
+
+        scene.background =
+            new THREE.Color(
+                0xffaa77
+            );
+
+
+        sunLight.color.set(
+            0xffcc99
+        );
+
+
+    }
+    else {
+
+
+        // day
+
+        scene.background =
+            new THREE.Color(
+                0x78c8ff
+            );
+
+
+        sunLight.color.set(
+            0xffffff
+        );
+
+
+    }
+
+
+}
 
 
 // =========================
 // VIEW CUBE
 // =========================
 
+// =========================
+// CLOUD SYSTEM
+// =========================
+
+
+let clouds = [];
+
+
+const cloudMaterial =
+    new THREE.MeshLambertMaterial({
+
+        color: 0xffffff,
+
+        transparent: true,
+
+        opacity: 0.85,
+
+        depthWrite: false
+
+    });
+
+
+
+function createCloud(x, y, z) {
+
+    let cloud = new THREE.Group();
+
+    let cloudShape = [
+        [-2, 0, 0],
+        [-1, 0, 0],
+        [0, 0, 0],
+        [1, 0, 0],
+        [2, 0, 0],
+
+        [-1, 0.5, 0],
+        [0, 0.5, 0],
+        [1, 0.5, 0]
+    ];
+
+
+    cloudShape.forEach(offset => {
+
+        let cube =
+            new THREE.Mesh(
+                new THREE.BoxGeometry(
+                    2.9,
+                    0.9,
+                    1.9
+                ),
+                cloudMaterial
+            );
+
+
+        cube.position.set(
+            offset[0],
+            offset[1],
+            offset[2]
+        );
+
+
+        cloud.add(cube);
+
+    });
+
+
+    cloud.position.set(
+        x,
+        y,
+        z
+    );
+
+
+    scene.add(cloud);
+
+    clouds.push(cloud);
+
+}
+function generateClouds() {
+
+
+    for (
+        let i = 0;
+        i < 25;
+        i++
+    ) {
+
+
+        createCloud(
+
+            Math.random() * 120 - 60,
+
+            35 + Math.random() * 20,
+
+            Math.random() * 120 - 60
+
+        );
+
+
+    }
+
+
+}
+// =========================
+// LOW CLOUD SYSTEM
+// =========================
+
+let lowClouds = [];
+
+
+function createLowCloud(x, y, z) {
+
+
+    let cloud =
+        new THREE.Group();
+
+
+
+    let parts = [
+
+        [-3, 0, 0],
+        [-2, 0, 0],
+        [-1, 0, 0],
+        [0, 0, 0],
+        [1, 0, 0],
+        [2, 0, 0],
+
+        [-1, 0.5, 0],
+        [0, 0.5, 0],
+        [1, 0.5, 0]
+
+    ];
+
+    const lowCloudMaterial =
+        new THREE.MeshLambertMaterial({
+
+            color: 0xffffff,
+
+            transparent: true,
+
+            opacity: 0.55,
+
+            depthWrite: false
+
+        });
+
+    parts.forEach(offset => {
+
+
+        let cube =
+            new THREE.Mesh(
+
+                new THREE.BoxGeometry(
+                    1.95,
+                    0.68,
+                    1.95
+                ),
+
+
+                lowCloudMaterial
+
+            );
+
+
+        cube.position.set(
+
+            offset[0],
+            offset[1],
+            offset[2]
+
+        );
+
+
+        cloud.add(cube);
+
+
+    });
+
+
+
+    cloud.position.set(
+        x,
+        y,
+        z
+    );
+
+
+    scene.add(
+        cloud
+    );
+
+
+    lowClouds.push(cloud);
+
+}
+function generateLowClouds() {
+
+
+    for (
+        let i = 0;
+        i < 15;
+        i++
+    ) {
+
+
+        createLowCloud(
+
+            Math.random() * 100 - 50,
+
+            8 + Math.random() * 8,
+
+            Math.random() * 100 - 50
+
+        );
+
+
+    }
+
+
+}
+
+
+generateLowClouds();
+function updateLowClouds() {
+
+
+    lowClouds.forEach(cloud => {
+
+
+        cloud.position.z += 0.015;
+
+
+        if (cloud.position.z > 60) {
+
+
+            cloud.position.z = -60;
+
+
+        }
+
+
+    });
+
+
+}
+
+
+generateClouds();
+function updateClouds() {
+
+
+    clouds.forEach(cloud => {
+
+
+        cloud.position.x += 0.01;
+
+
+
+        // wrap around world
+
+        if (cloud.position.x > 80) {
+
+
+            cloud.position.x = -80;
+
+
+        }
+
+
+    });
+
+
+}
 
 const cubeScene =
     new THREE.Scene();
@@ -179,11 +828,11 @@ const viewCubeGeometry =
 
 const cubeFaceMaterial = {
 
-    transparent:true,
+    transparent: true,
 
-    opacity:0.35,
+    opacity: 0.35,
 
-    side:THREE.DoubleSide
+    side: THREE.DoubleSide
 
 };
 
@@ -191,32 +840,32 @@ const cubeFaceMaterial = {
 const cubeMaterials = [
 
     new THREE.MeshBasicMaterial({
-        color:0xff5555,
+        color: 0xff5555,
         ...cubeFaceMaterial
     }),
 
     new THREE.MeshBasicMaterial({
-        color:0xff5555,
+        color: 0xff5555,
         ...cubeFaceMaterial
     }),
 
     new THREE.MeshBasicMaterial({
-        color:0x55ff55,
+        color: 0x55ff55,
         ...cubeFaceMaterial
     }),
 
     new THREE.MeshBasicMaterial({
-        color:0x55ff55,
+        color: 0x55ff55,
         ...cubeFaceMaterial
     }),
 
     new THREE.MeshBasicMaterial({
-        color:0x5599ff,
+        color: 0x5599ff,
         ...cubeFaceMaterial
     }),
 
     new THREE.MeshBasicMaterial({
-        color:0x5599ff,
+        color: 0x5599ff,
         ...cubeFaceMaterial
     })
 
@@ -233,7 +882,7 @@ const viewCube =
 
 
 cubeScene.add(viewCube);
-function createFaceLabel(text, position, rotation){
+function createFaceLabel(text, position, rotation) {
 
 
     const canvas =
@@ -288,11 +937,11 @@ function createFaceLabel(text, position, rotation){
     const material =
         new THREE.MeshBasicMaterial({
 
-            map:texture,
+            map: texture,
 
-            transparent:true,
+            transparent: true,
 
-            depthTest:false
+            depthTest: false
 
         });
 
@@ -348,7 +997,7 @@ createFaceLabel(
     ),
 
     new THREE.Euler(
-        -Math.PI/2,
+        -Math.PI / 2,
         0,
         0
     )
@@ -393,7 +1042,7 @@ createFaceLabel(
 
     new THREE.Euler(
         0,
-        Math.PI/2,
+        Math.PI / 2,
         0
     )
 
@@ -401,7 +1050,7 @@ createFaceLabel(
 function createAxisLine(
     color,
     direction
-){
+) {
 
 
     const points = [
@@ -418,28 +1067,28 @@ function createAxisLine(
 
 
     const geometry =
-    new THREE.BufferGeometry()
-    .setFromPoints(
-        points
-    );
+        new THREE.BufferGeometry()
+            .setFromPoints(
+                points
+            );
 
 
     const material =
-    new THREE.LineBasicMaterial({
+        new THREE.LineBasicMaterial({
 
-        color:color,
+            color: color,
 
-        linewidth:3
+            linewidth: 3
 
-    });
+        });
 
 
 
     const line =
-    new THREE.Line(
-        geometry,
-        material
-    );
+        new THREE.Line(
+            geometry,
+            material
+        );
 
 
     cubeScene.add(line);
@@ -492,8 +1141,8 @@ function updateViewCube() {
 
 
     viewCube.quaternion.copy(
-    camera.quaternion.clone().invert()
-);
+        camera.quaternion.clone().invert()
+    );
 
     cubeScene.add(viewCube);
     cubeCamera.lookAt(0, 0, 0);
@@ -963,10 +1612,18 @@ function createBlock(x, y, z, type) {
 
     blocks[key] = cube;
 
-
     blockCount++;
 
     updateStats();
+
+}
+class blockItem {
+    constructor(id, type, location) {
+        this.id = id
+        this.type = type
+        this.location = location
+        blocksToMake.push(this)
+    }
 
 }
 function applyGravity() {
@@ -1013,10 +1670,15 @@ function applyGravity() {
 
                 delete blocks[oldKey];
 
+                let index = blocksToMake.findIndex((block) => {
+                    return (block.location.x == x && block.location.y == y && block.location.z == z)
+                })
 
+                blocksToMake.splice(index, 1)
 
                 block.position.y -= 1;
 
+                new blockItem(self.crypto.randomUUID(), selectedBlock, { x: x, y: y - 1, z: z })
 
 
                 let newKey =
@@ -1025,6 +1687,8 @@ function applyGravity() {
 
 
                 blocks[newKey] = block;
+
+
 
 
             }
@@ -1046,6 +1710,12 @@ function removeBlock(x, y, z) {
 
     }
 
+    let index = blocksToMake.findIndex((block) => {
+        return (block.location.x == x && block.location.y == y && block.location.z == z)
+    })
+
+    blocksToMake.splice(index, 1)
+
     let key =
         `${x},${y},${z}`;
 
@@ -1058,6 +1728,8 @@ function removeBlock(x, y, z) {
     scene.remove(
         blocks[key]
     );
+
+
 
 
     delete blocks[key];
@@ -1098,6 +1770,7 @@ function generateWorld() {
                 z,
                 "dirt"
             );
+            blockCount--;
 
 
             createBlock(
@@ -1106,6 +1779,7 @@ function generateWorld() {
                 z,
                 "dirt"
             );
+            blockCount--;
 
 
             createBlock(
@@ -1114,10 +1788,14 @@ function generateWorld() {
                 z,
                 "grass"
             );
+            blockCount--;
 
 
         }
+
     }
+    updateStats();
+
 
 }
 
@@ -1314,6 +1992,7 @@ renderer.domElement
                     selectedBlock
 
                 );
+                new blockItem(self.crypto.randomUUID(), selectedBlock, { x: newX, y: newY, z: newZ })
 
 
             }
@@ -1398,7 +2077,7 @@ function animate() {
     updateCamera();
 
     gravityTimer++;
-    if (gravityTimer > 20) {
+    if (gravityTimer > 5) {
 
         applyGravity();
 
@@ -1413,6 +2092,9 @@ function animate() {
 
 
     updateViewCube();
+    updateClouds();
+    updateLowClouds();
+    updateDayNight();
 
 
 }
@@ -1493,15 +2175,15 @@ function insideBuildZone(x, z) {
 
 }
 const homePosition =
-new THREE.Vector3(
-    12,
-    12,
-    12
-);
+    new THREE.Vector3(
+        12,
+        12,
+        12
+    );
 
 
 
-function resetCamera(){
+function resetCamera() {
 
 
     camera.position.copy(
@@ -1523,103 +2205,245 @@ function resetCamera(){
 
 }
 document
-.getElementById("home-button")
-.onclick = resetCamera;
+    .getElementById("home-button")
+    .onclick = resetCamera;
 const cubeRaycaster =
-new THREE.Raycaster();
+    new THREE.Raycaster();
 
 
 const cubeMouse =
-new THREE.Vector2();
+    new THREE.Vector2();
 cubeRenderer.domElement
-.addEventListener(
-"click",
-e=>{
+    .addEventListener(
+        "click",
+        e => {
 
 
-let rect =
-cubeRenderer.domElement
-.getBoundingClientRect();
-
-
-
-cubeMouse.x =
-((e.clientX-rect.left)
-/rect.width)*2-1;
+            let rect =
+                cubeRenderer.domElement
+                    .getBoundingClientRect();
 
 
 
-cubeMouse.y =
--((e.clientY-rect.top)
-/rect.height)*2+1;
+            cubeMouse.x =
+                ((e.clientX - rect.left)
+                    / rect.width) * 2 - 1;
 
 
 
-cubeRaycaster
-.setFromCamera(
-    cubeMouse,
-    cubeCamera
-);
+            cubeMouse.y =
+                -((e.clientY - rect.top)
+                    / rect.height) * 2 + 1;
 
 
 
-let hit =
-cubeRaycaster
-.intersectObject(
-    viewCube
-);
+            cubeRaycaster
+                .setFromCamera(
+                    cubeMouse,
+                    cubeCamera
+                );
 
 
 
-if(!hit.length)
-return;
+            let hit =
+                cubeRaycaster
+                    .intersectObject(
+                        viewCube
+                    );
 
 
 
-let normal =
-hit[0].face.normal;
+            if (!hit.length)
+                return;
 
 
 
-if(normal.y > .5){
+            let normal =
+                hit[0].face.normal;
 
-    camera.position.set(
-        0,
-        25,
-        0
-    );
+
+
+            if (normal.y > .5) {
+
+                camera.position.set(
+                    0,
+                    25,
+                    0
+                );
+
+            }
+
+
+            if (normal.z > .5) {
+
+                camera.position.set(
+                    0,
+                    10,
+                    25
+                );
+
+            }
+
+
+            if (normal.x > .5) {
+
+                camera.position.set(
+                    25,
+                    10,
+                    0
+                );
+
+            }
+
+
+
+            cameraTarget.set(
+                0,
+                0,
+                0
+            );
+
+
+        });
+
+const loadingMessages = [
+
+    "Generating toolpaths...",
+    "Optimizing voxel layers...",
+    "Compressing block data...",
+    "Sending data to printer...",
+    "Heating print head...",
+    "Calculating supports...",
+    "Aligning build platform...",
+    "Preparing first layer...",
+    "Calibrating printer...",
+    "Checking block integrity...",
+    "Building chunks...",
+    "Crafting masterpiece...",
+    "Mining diamonds...",
+    "Feeding creepers...",
+    "Summoning Steve..."
+];
+
+let printTimer;
+
+function startPrinting(totalSeconds, data) {
+
+    document
+        .getElementById("printOverlay")
+        .classList.remove("hidden");
+
+    let elapsed = 0;
+
+    updateLoadingMessage();
+
+    printTimer = setInterval(() => {
+
+        elapsed++;
+
+        let percent = Math.min(100,
+            elapsed / totalSeconds * 100);
+
+        document
+            .getElementById("progressBar")
+            .style.width = percent + "%";
+
+        document
+            .getElementById("progressPercent")
+            .textContent =
+            Math.floor(percent) + "%";
+
+        let remaining =
+            totalSeconds - elapsed;
+
+        let mins =
+            Math.floor(remaining / 60);
+
+        let secs =
+            remaining % 60;
+
+        document
+            .getElementById("remainingTime")
+            .textContent =
+            `${mins}:${secs.toString().padStart(2, "0")}`;
+
+        if (elapsed % 4 === 0)
+            updateLoadingMessage();
+
+        if (elapsed >= totalSeconds) {
+
+            clearInterval(printTimer);
+
+            document
+                .getElementById("loadingMessage")
+                .textContent =
+                "Print Complete!";
+
+            setTimeout(() => {
+
+                document
+                    .getElementById("printOverlay")
+                    .classList.add("hidden");
+
+            }, 1500);
+
+        }
+
+    }, 1000);
 
 }
 
+function updateLoadingMessage() {
 
-if(normal.z > .5){
-
-    camera.position.set(
-        0,
-        10,
-        25
-    );
-
-}
-
-
-if(normal.x > .5){
-
-    camera.position.set(
-        25,
-        10,
-        0
-    );
+    document
+        .getElementById("loadingMessage")
+        .textContent =
+        loadingMessages[
+        Math.floor(
+            Math.random() * loadingMessages.length
+        )
+        ];
 
 }
 
+document
+    .getElementById("cancelPrint")
+    .onclick = () => {
 
+        clearInterval(printTimer);
+        socket.send("CancelPrint")
+        document
+            .getElementById("printOverlay")
+            .classList.add("hidden");
 
-cameraTarget.set(
-    0,
-    0,
-    0
-);
+    };
+document.getElementById("exportModel").addEventListener("click", () => {
+    connectToPrinter()
+            //if (connected) {
+                let layers = []
 
+                blocksToMake.forEach((block) => {
+                    if (layers[block.location.y - 1] == null || layers[block.location.y - 1] == undefined) {
+                        layers.push([])
+                        layers[block.location.y - 1].push(block)
+                    } else {
+                        layers[block.location.y - 1].push(block)
+                    }
+                })
+                layers.forEach((layr) => {
+                    layr.sort((a, b) => {
+                        return a.location.x - b.location.x
+                    })
+                })
+                console.log(layers)
+                layers.forEach((layr) => {
+                    layr = JSON.stringify(layr)
+                })
+                layers = JSON.stringify(layers)
+                startPrinting(1000, layers)
+                console.log(layers)
+                socket.send("StartPrint")
+            //}
+            
 
-});
+        })

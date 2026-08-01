@@ -8,7 +8,10 @@
     <title>VoxelForge</title>
 
     <link rel="stylesheet" href="index.css">
-     <link rel="icon" href="textures/logos.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="favicon_io/site.webmanifest">
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -32,8 +35,8 @@
             <div class="toolbar">
 
                 <a target="_blank" href="index.html"><button id="newWorld">
-                    New World
-                </button></a>
+                        New World
+                    </button></a>
 
                 <button id="saveWorld">
                     Save
@@ -143,9 +146,7 @@
 
             <!-- 3D VIEW -->
             <section class="viewport">
-                <button id="home-button">
-                    ⌂
-                </button>
+                <button id="home-button">⌂</button>
                 <div id="three-container"></div>
                 <div id="view-cube"></div>
 
@@ -171,43 +172,13 @@
 
                 <div class="stat">
 
-                    Blocks:
+                    Blocks Required:
 
                     <span id="blockCount">
                         0
                     </span>
 
                 </div>
-
-
-
-                <div class="stat">
-
-                    Size:
-
-                    <span id="worldSize">
-                        0 x 0 x 0
-                    </span>
-
-                </div>
-
-
-
-
-
-
-                <h2 style="margin-top: 50px;">
-                    Fabrication
-                </h2>
-
-
-
-
-                <button id="generateFile">
-
-                    Generate Model
-
-                </button>
 
 
 
@@ -230,7 +201,7 @@
 
             <div id="status">
 
-                Ready
+                Connecting To Printer...
 
             </div>
 
@@ -258,6 +229,45 @@
         </div>
 
     </div>
+<div id="printOverlay" class="print-overlay hidden">
+
+    <div class="print-window">
+
+        <div class="voxel-loader">
+            <div class="cube"></div>
+        </div>
+
+        <h2>Printing Model</h2>
+
+        <p id="loadingMessage">
+            Preparing build...
+        </p>
+
+        <div class="progress-container">
+            <div id="progressBar"></div>
+        </div>
+
+        <div class="print-info">
+
+            <div>
+                <span>Progress</span>
+                <strong id="progressPercent">0%</strong>
+            </div>
+
+            <div>
+                <span>Estimated Remaining</span>
+                <strong id="remainingTime">--:--</strong>
+            </div>
+
+        </div>
+        
+        <button id="cancelPrint">
+            Cancel
+        </button>
+
+    </div>
+
+</div>
 
     <script src="index.js"></script>
 
